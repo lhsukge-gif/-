@@ -1,1 +1,274 @@
-<h1>안녕하세요</h1>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>만족도 조사</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1d2433;
+      --muted: #5f6b7a;
+      --line: #dde3ea;
+      --accent: #0d9b8a;
+      --accent-soft: #e3f5f2;
+      --danger: #c0392b;
+      --radius: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #12161c;
+        --card: #1b2129;
+        --text: #e8edf3;
+        --muted: #9aa6b4;
+        --line: #2c3540;
+        --accent: #2cc1ad;
+        --accent-soft: #173a36;
+        --danger: #ff7b6b;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #12161c;
+      --card: #1b2129;
+      --text: #e8edf3;
+      --muted: #9aa6b4;
+      --line: #2c3540;
+      --accent: #2cc1ad;
+      --accent-soft: #173a36;
+      --danger: #ff7b6b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+    }
+    main { max-width: 640px; margin: 0 auto; padding: 32px 16px 64px; }
+    header h1 { margin: 0 0 6px; font-size: 1.6rem; }
+    header p { margin: 0 0 24px; color: var(--muted); }
+
+    .q {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .q.invalid { border-color: var(--danger); }
+    .q h2 { margin: 0 0 12px; font-size: 1rem; font-weight: 500; }
+    .req { color: var(--danger); margin-left: 2px; }
+    .hint { color: var(--muted); font-size: .85rem; margin: -8px 0 12px; }
+
+    .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .scale label, .choices label { cursor: pointer; }
+    .scale input, .choices input { position: absolute; opacity: 0; pointer-events: none; }
+    .scale span {
+      display: block; text-align: center; padding: 10px 0;
+      border: 1px solid var(--line); border-radius: 10px; font-weight: 500;
+      transition: background .15s, border-color .15s;
+    }
+    .scale input:checked + span,
+    .choices input:checked + span {
+      background: var(--accent-soft); border-color: var(--accent); color: var(--accent);
+    }
+    .scale input:focus-visible + span,
+    .choices input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .scale-legend { display: flex; justify-content: space-between; color: var(--muted); font-size: .8rem; margin-top: 6px; }
+
+    .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+    .choices span {
+      display: inline-block; padding: 8px 14px;
+      border: 1px solid var(--line); border-radius: 999px; font-size: .95rem;
+    }
+
+    input[type="text"], textarea {
+      width: 100%; padding: 12px; font: inherit; color: var(--text);
+      background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+    input[type="text"]:focus, textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+    button {
+      width: 100%; padding: 14px; margin-top: 8px;
+      font: inherit; font-weight: 700; color: #fff;
+      background: var(--accent); border: 0; border-radius: var(--radius); cursor: pointer;
+    }
+    button:disabled { opacity: .6; cursor: default; }
+
+    .status { margin-top: 14px; text-align: center; min-height: 1.6em; }
+    .status.error { color: var(--danger); }
+    .done { text-align: center; padding: 48px 20px; }
+    .done h2 { margin: 0 0 8px; }
+    .hidden { display: none; }
+    .hp { position: absolute; left: -9999px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>만족도 조사</h1>
+    <p>잠깐만 시간을 내어 의견을 들려주세요. 약 1분이면 끝납니다.</p>
+  </header>
+
+  <form id="survey" novalidate>
+    <section class="q" data-required>
+      <h2>전체적으로 얼마나 만족하셨나요?<span class="req">*</span></h2>
+      <div class="scale" data-name="전체만족도"></div>
+      <div class="scale-legend"><span>매우 불만족</span><span>매우 만족</span></div>
+    </section>
+
+    <section class="q" data-required>
+      <h2>내용은 도움이 되었나요?<span class="req">*</span></h2>
+      <div class="scale" data-name="내용만족도"></div>
+      <div class="scale-legend"><span>전혀 아니다</span><span>매우 그렇다</span></div>
+    </section>
+
+    <section class="q" data-required>
+      <h2>진행 방식(속도, 설명, 소통)은 어떠셨나요?<span class="req">*</span></h2>
+      <div class="scale" data-name="진행만족도"></div>
+      <div class="scale-legend"><span>매우 불만족</span><span>매우 만족</span></div>
+    </section>
+
+    <section class="q">
+      <h2>특히 좋았던 점을 골라 주세요.</h2>
+      <p class="hint">여러 개 선택할 수 있어요.</p>
+      <div class="choices">
+        <label><input type="checkbox" name="좋았던점" value="실습"><span>실습</span></label>
+        <label><input type="checkbox" name="좋았던점" value="설명"><span>설명</span></label>
+        <label><input type="checkbox" name="좋았던점" value="자료"><span>자료</span></label>
+        <label><input type="checkbox" name="좋았던점" value="질의응답"><span>질의응답</span></label>
+        <label><input type="checkbox" name="좋았던점" value="분위기"><span>분위기</span></label>
+      </div>
+    </section>
+
+    <section class="q" data-required>
+      <h2>다음에도 참여하실 의향이 있나요?<span class="req">*</span></h2>
+      <div class="choices">
+        <label><input type="radio" name="재참여의향" value="예"><span>예</span></label>
+        <label><input type="radio" name="재참여의향" value="잘 모르겠다"><span>잘 모르겠다</span></label>
+        <label><input type="radio" name="재참여의향" value="아니오"><span>아니오</span></label>
+      </div>
+    </section>
+
+    <section class="q">
+      <h2>개선했으면 하는 점이나 하고 싶은 말씀을 적어 주세요.</h2>
+      <textarea name="의견" maxlength="2000" placeholder="자유롭게 적어 주세요."></textarea>
+    </section>
+
+    <section class="q">
+      <h2>이름 또는 닉네임 (선택)</h2>
+      <input type="text" name="이름" maxlength="50" autocomplete="off">
+    </section>
+
+    <!-- 스팸 봇 차단용 숨김 필드: 사람은 보지 못함 -->
+    <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+    <button type="submit" id="submitBtn">제출하기</button>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </form>
+
+  <section class="q done hidden" id="done">
+    <h2>제출해 주셔서 감사합니다 🙏</h2>
+    <p>보내 주신 의견은 더 나은 시간을 만드는 데 꼭 반영하겠습니다.</p>
+  </section>
+</main>
+
+<script>
+  const CONFIG = {
+    // Code.gs 를 웹 앱으로 배포한 뒤 받은 URL 을 붙여넣으세요.
+    ENDPOINT: "",
+  };
+
+  const form = document.getElementById("survey");
+  const statusEl = document.getElementById("status");
+  const submitBtn = document.getElementById("submitBtn");
+
+  // 1~5점 척도 버튼 생성
+  document.querySelectorAll(".scale").forEach(scale => {
+    const name = scale.dataset.name;
+    for (let i = 1; i <= 5; i++) {
+      scale.insertAdjacentHTML("beforeend",
+        `<label><input type="radio" name="${name}" value="${i}"><span>${i}</span></label>`);
+    }
+  });
+
+  function collect() {
+    const fd = new FormData(form);
+    return {
+      "전체만족도": Number(fd.get("전체만족도")),
+      "내용만족도": Number(fd.get("내용만족도")),
+      "진행만족도": Number(fd.get("진행만족도")),
+      "좋았던점": fd.getAll("좋았던점").join(", "),   // 선택 안 해도 키는 항상 전송
+      "재참여의향": fd.get("재참여의향") || "",
+      "의견": (fd.get("의견") || "").trim(),
+      "이름": (fd.get("이름") || "").trim(),
+    };
+  }
+
+  function validate() {
+    let firstInvalid = null;
+    form.querySelectorAll(".q[data-required]").forEach(q => {
+      const ok = q.querySelector("input:checked") !== null;
+      q.classList.toggle("invalid", !ok);
+      if (!ok && !firstInvalid) firstInvalid = q;
+    });
+    if (firstInvalid) firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    return !firstInvalid;
+  }
+
+  form.addEventListener("change", e => {
+    const q = e.target.closest(".q");
+    if (q) q.classList.remove("invalid");
+    if (!form.querySelector(".q.invalid") && statusEl.classList.contains("error")) setStatus("");
+  });
+
+  function setStatus(msg, isError) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle("error", !!isError);
+  }
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!validate()) return setStatus("필수 문항(*)에 답해 주세요.", true);
+
+    // 숨김 필드가 채워졌다면 봇으로 보고 조용히 종료
+    if (form.website.value) return showDone();
+
+    const data = collect();
+
+    if (!CONFIG.ENDPOINT) {
+      console.log("[테스트 모드] 전송될 데이터:", data);
+      return setStatus("테스트 모드입니다. CONFIG.ENDPOINT 를 설정하면 실제로 저장됩니다. (콘솔에서 데이터 확인)", true);
+    }
+
+    submitBtn.disabled = true;
+    setStatus("제출 중…");
+    try {
+      // Content-Type 헤더를 붙이지 않아야 CORS 사전 요청이 생기지 않습니다.
+      const res = await fetch(CONFIG.ENDPOINT, { method: "POST", body: JSON.stringify(data) });
+      const result = await res.json();
+      if (!result.ok) throw new Error(result.error || "unknown");
+      showDone();
+    } catch (err) {
+      console.error(err);
+      setStatus("제출에 실패했습니다. 잠시 후 다시 시도해 주세요.", true);
+      submitBtn.disabled = false;
+    }
+  });
+
+  function showDone() {
+    form.classList.add("hidden");
+    document.querySelector("header").classList.add("hidden");
+    document.getElementById("done").classList.remove("hidden");
+    window.scrollTo({ top: 0 });
+  }
+</script>
+</body>
+</html>
