@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: digital-citizen-gallery
+    runtime: python
+    plan: free
+    buildCommand: python -m compileall -q server.py storage.py
+    startCommand: python server.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: GALLERY_BACKEND
+        value: supabase
+      - key: SUPABASE_URL
+        value: https://cepbpqetcwazowtiftxc.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
