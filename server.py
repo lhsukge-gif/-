@@ -1,4 +1,4 @@
-import json, os, sqlite3, threading, time, uuid
+import json, os, sqlite3, threading, time, uuid, hmac
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
@@ -35,6 +35,16 @@ class Handler(BaseHTTPRequestHandler):
    return
   if self.path.split('?')[0] not in ('/','/index.html'): return self.send(404,{'error':'찾을 수 없습니다.'})
   raw=(ROOT/'index.html').read_bytes(); self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.send_header('Content-Length',str(len(raw))); self.end_headers(); self.wfile.write(raw)
+ def require_password(self, data, variable):
+  expected=os.environ.get(variable, '')
+  if not expected:
+   self.send(503,{'error':'선생님이 비밀번호를 설정한 후 사용할 수 있습니다.'})
+   return False
+  supplied=data.get('password','')
+  if not isinstance(supplied,str) or not hmac.compare_digest(supplied.encode(),expected.encode()):
+   self.send(403,{'error':'비밀번호가 올바르지 않습니다.'})
+   return False
+  return True
  def do_POST(self):
   global revision
   try:
@@ -44,12 +54,20 @@ class Handler(BaseHTTPRequestHandler):
    if not isinstance(d,dict): raise ValueError('올바른 등록 정보를 입력해 주세요.')
    parts=self.path.strip('/').split('/')
    if self.path=='/api/works':
+    if not self.require_password(d,'GALLERY_REGISTRATION_PASSWORD'): return
     w={k:field(d,k,200 if k=='members' else 100) for k in ('school','grade','team','members')}; w['title']=field(d,'title',100,False) or w['team']+'의 작품'; w['url']=field(d,'url',2000)
     if urlparse(w['url']).scheme not in ('http','https') or not urlparse(w['url']).netloc: raise ValueError('올바른 웹사이트 주소를 입력해 주세요.')
     poster=field(d,'poster',5600000,False)
     decode_poster(poster)
     w.update(id=uuid.uuid4().hex,poster=poster,created=time.time(),reactions={},comments=[]); STORE.add(w)
    elif len(parts)==4 and parts[:2]==['api','works']:
+    if parts[3]=='delete':
+     if not self.require_password(d,'GALLERY_ADMIN_PASSWORD'): return
+     STORE.delete(parts[2])
+     with changed:
+      revision+=1
+      changed.notify_all()
+     return self.send(200,{'ok':True})
     if parts[3]=='react':
      data={'client':field(d,'client',100),'emoji':field(d,'emoji',10)}
      if data['emoji'] not in ['👍','💗','😮','💡']: raise ValueError('반응을 확인해 주세요.')

@@ -54,6 +54,14 @@ class SQLiteStore:
     def add(self, work):
         self.mutate(lambda works: works.insert(0, work))
 
+    def delete(self, ident):
+        def change(works):
+            work = next((w for w in works if w['id'] == ident), None)
+            if work is None:
+                raise KeyError(ident)
+            works.remove(work)
+        self.mutate(change)
+
     def update(self, ident, action, data):
         def change(works):
             work = next((w for w in works if w['id'] == ident), None)
@@ -123,6 +131,21 @@ class SupabaseStore:
         self.request('/rest/v1/gallery_works?on_conflict=id', 'POST',
                      {'id': payload['id'], 'payload': payload},
                      {'Prefer': 'resolution=ignore-duplicates,return=minimal'})
+
+    def delete(self, ident):
+        result = self.request('/rest/v1/gallery_works?id=eq.' + urllib.parse.quote(ident, safe=''),
+                              'DELETE', headers={'Prefer': 'return=representation'})
+        if not result:
+            raise KeyError(ident)
+        # Removing the card is authoritative. Poster cleanup is best-effort.
+        poster = result[0]['payload'].get('poster', '')
+        prefix = self.url + '/storage/v1/object/public/gallery-posters/'
+        if poster.startswith(prefix):
+            filename = urllib.parse.unquote(poster[len(prefix):])
+            try:
+                self.request('/storage/v1/object/gallery-posters', 'DELETE', {'prefixes': [filename]})
+            except (StorageError, KeyError):
+                pass
 
     def update(self, ident, action, data):
         result = self.request('/rest/v1/rpc/gallery_update', 'POST',

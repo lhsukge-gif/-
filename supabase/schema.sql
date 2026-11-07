@@ -6,7 +6,7 @@ create table if not exists public.gallery_works (
 );
 alter table public.gallery_works enable row level security;
 revoke all on public.gallery_works from anon, authenticated;
-grant select, insert, update on public.gallery_works to service_role;
+grant select, insert, update, delete on public.gallery_works to service_role;
 
 -- Lock the affected row so simultaneous reactions/comments cannot overwrite each other.
 create or replace function public.gallery_update(work_id text, action text, input_data jsonb)

@@ -13,3 +13,7 @@ services:
         value: https://cepbpqetcwazowtiftxc.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: GALLERY_REGISTRATION_PASSWORD
+        sync: false
+      - key: GALLERY_ADMIN_PASSWORD
+        sync: false
